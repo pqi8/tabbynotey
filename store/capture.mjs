@@ -9,6 +9,8 @@ const root = path.dirname(out);
 const browser = await puppeteer.launch({
   executablePath: process.env.CHROME_PATH || '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',
   headless: true, pipe: true, enableExtensions: true,
+  args: ['--force-device-scale-factor=2'],
+  defaultViewport: {width: 1280, height: 800, deviceScaleFactor: 2},
 });
 try {
   const id = await browser.installExtension(path.join(root, 'extension'));
@@ -49,7 +51,7 @@ try {
   await popup.evaluate(() => document.activeElement?.blur());
   const allRect = await capture('all-notes');
   const badge = await sw.evaluate(async url => { const [t] = await chrome.tabs.query({url}); return chrome.action.getBadgeText({tabId: t.id}); }, url);
-  const info = await popup.evaluate(() => ({count: document.querySelector('#count').textContent, groups: [...document.querySelectorAll('.group-title')].map(x => x.textContent), favicons: [...document.images].map(x => ({loaded: x.complete && x.naturalWidth > 0, src: x.src}))}));
+  const info = await popup.evaluate(() => ({fonts: {note: getComputedStyle(document.querySelector('.note-text')).fontSize, timestamp: getComputedStyle(document.querySelector('.note time')).fontSize}, count: document.querySelector('#count').textContent, groups: [...document.querySelectorAll('.group-title')].map(x => x.textContent), favicons: [...document.images].map(x => ({loaded: x.complete && x.naturalWidth > 0, src: x.src}))}));
   const compose = await browser.newPage();
   await compose.setViewport({width: 1280, height: 800, deviceScaleFactor: 1});
   for (const [name, heading, subheading, rect] of [
@@ -57,7 +59,7 @@ try {
     ['all-notes', 'Find your notes.<br>Return to the page.', 'Search saved notes by text, title, or URL.<br>Keep a local backup with Export.', allRect],
   ]) {
     const png = (await readFile(path.join(out, name + '-popup.png'))).toString('base64');
-    await compose.setContent(`<!doctype html><html><head><style>*{box-sizing:border-box}body{margin:0;width:1280px;height:800px;background:#f0f3ef;color:#193c30;font-family:system-ui,-apple-system,sans-serif;display:flex;align-items:center;gap:100px;padding:80px 110px}.copy{width:470px}.brand{font-size:22px;font-weight:650;margin:0 0 40px}h1{font-size:40px;line-height:1.2;letter-spacing:-1.2px;margin:0 0 24px;font-weight:650}p{font-size:18px;line-height:1.6;color:#466052;margin:0}.popup{width:380px;flex:none;box-shadow:0 16px 52px #193c3024;border-radius:8px;overflow:hidden;background:#fafaf9}img{display:block;width:380px;height:${rect.height}px}</style></head><body><div class="copy"><div class="brand">TabbyNotey</div><h1>${heading}</h1><p>${subheading}</p></div><div class="popup"><img src="data:image/png;base64,${png}" alt="TabbyNotey popup"></div></body></html>`);
+    await compose.setContent(`<!doctype html><html><head><style>*{box-sizing:border-box}body{margin:0;width:1280px;height:800px;background:#f0f3ef;color:#193c30;font-family:system-ui,-apple-system,sans-serif;display:flex;align-items:center;gap:60px;padding:60px 70px}.copy{width:510px;flex:none}.brand{font-size:22px;font-weight:650;margin:0 0 40px}h1{font-size:40px;line-height:1.2;letter-spacing:-1.2px;margin:0 0 24px;font-weight:650}p{font-size:18px;line-height:1.6;color:#466052;margin:0}.popup{width:570px;flex:none;box-shadow:0 16px 52px #193c3024;border-radius:8px;overflow:hidden;background:#fafaf9}img{display:block;width:570px;height:${rect.height * 1.5}px}</style></head><body><div class="copy"><div class="brand">TabbyNotey</div><h1>${heading}</h1><p>${subheading}</p></div><div class="popup"><img src="data:image/png;base64,${png}" alt="TabbyNotey popup"></div></body></html>`);
     await compose.evaluate(() => Promise.all([...document.images].map(i => i.decode())));
     await compose.screenshot({path: path.join(out, `screenshot-${name}.png`)});
   }
@@ -66,6 +68,6 @@ try {
   await compose.setContent(`<!doctype html><style>body{margin:0;width:440px;height:280px;background:#2f6b57;color:white;font-family:system-ui,-apple-system,sans-serif;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:20px}img{width:104px;height:104px}strong{font-size:30px;font-weight:600;letter-spacing:-.6px}</style><img src="data:image/png;base64,${icon}" alt=""><strong>TabbyNotey</strong>`);
   await compose.evaluate(() => Promise.all([...document.images].map(i => i.decode())));
   await compose.screenshot({path:path.join(out,'promo-small.png')});
-  await writeFile(path.join(out,'capture-results.json'), JSON.stringify({chrome:await browser.version(), extensionId:id, pageRect, allRect, badge, ...info, pageErrors, source:'Installed extension; chrome.action.openPopup(); neutral synthetic notes; isolated temporary Chrome profile; no demo adapter. Popup pixels composed at original 380px width.'},null,2)+'\n');
+  await writeFile(path.join(out,'capture-results.json'), JSON.stringify({chrome:await browser.version(), extensionId:id, pageRect, allRect, badge, ...info, pageErrors, source:'Installed extension; chrome.action.openPopup(); neutral synthetic notes; isolated temporary Chrome profile; no demo adapter. Popup rendered at deviceScaleFactor 2 and composed at 570px (1.5× native width); body inherits the intended 13px font, timestamps remain 12px.'},null,2)+'\n');
   console.log(JSON.stringify({pageRect,allRect,badge,...info,pageErrors}));
 } finally { await browser.close(); }

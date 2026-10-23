@@ -5,15 +5,19 @@
     "x": 0,
     "y": 0,
     "width": 380,
-    "height": 352.71875
+    "height": 398.09375
   },
   "allRect": {
     "x": 0,
     "y": 0,
     "width": 380,
-    "height": 438.5
+    "height": 482
   },
   "badge": "2",
+  "fonts": {
+    "note": "13px",
+    "timestamp": "12px"
+  },
   "count": "3",
   "groups": [
     "Weekend walking routes",
@@ -34,5 +38,5 @@
     }
   ],
   "pageErrors": [],
-  "source": "Installed extension; chrome.action.openPopup(); neutral synthetic notes; isolated temporary Chrome profile; no demo adapter. Popup pixels composed at original 380px width."
+  "source": "Installed extension; chrome.action.openPopup(); neutral synthetic notes; isolated temporary Chrome profile; no demo adapter. Popup rendered at deviceScaleFactor 2 and composed at 570px (1.5× native width); body inherits the intended 13px font, timestamps remain 12px."
 }
