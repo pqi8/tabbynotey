@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>TabbyNotey</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <nav class="tabs" aria-label="Notes">
+    <button id="current-tab" aria-current="page">This page<span id="page-count" class="count" hidden></span></button>
+    <button id="all-tab">All notes<span id="count" class="count" hidden></span></button>
+  </nav>
+  <main>
+    <section id="editor" aria-label="This page">
+      <div class="page">
+        <img id="page-icon" class="favicon" alt="" hidden>
+        <div class="page-text">
+          <h1 id="page-title">Loading…</h1>
+          <p id="page-url" class="url"></p>
+        </div>
+      </div>
+      <div id="composer" class="composer" hidden>
+        <label class="sr-only" for="note">New note</label>
+        <textarea id="note" placeholder="Add a note…" maxlength="20000"></textarea>
+        <div id="composer-bar" class="bar" hidden>
+          <span id="status" class="status" role="status" aria-live="polite"></span>
+          <button id="discard" class="ghost">Discard</button>
+          <button id="save" class="primary" disabled>Add note <kbd id="shortcut">⌘↵</kbd></button>
+        </div>
+      </div>
+      <div id="page-notes" class="list"></div>
+    </section>
+    <section id="library" aria-label="All notes" hidden>
+      <div class="toolbar">
+        <label class="sr-only" for="search">Search notes</label>
+        <input id="search" type="search" placeholder="Search notes" autocomplete="off">
+        <button id="export" class="ghost" title="Download all notes as JSON">Export</button>
+      </div>
+      <div id="notes"></div>
+    </section>
+    <p id="error" class="error" role="alert" hidden></p>
+  </main>
+  <script type="module" src="popup.js"></script>
+</body>
+</html>

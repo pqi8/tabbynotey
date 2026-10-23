@@ -1,0 +1,38 @@
+{
+  "chrome": "Chrome/156.0.8078.48",
+  "extensionId": "hecbjbifaedeamedhmgdhemkfglaeflc",
+  "pageRect": {
+    "x": 0,
+    "y": 0,
+    "width": 380,
+    "height": 352.71875
+  },
+  "allRect": {
+    "x": 0,
+    "y": 0,
+    "width": 380,
+    "height": 438.5
+  },
+  "badge": "2",
+  "count": "3",
+  "groups": [
+    "Weekend walking routes",
+    "Lentil soup recipe"
+  ],
+  "favicons": [
+    {
+      "loaded": true,
+      "src": "chrome-extension://hecbjbifaedeamedhmgdhemkfglaeflc/_favicon/?pageUrl=https%3A%2F%2Fexample.org%2Fwalking-routes&size=32"
+    },
+    {
+      "loaded": true,
+      "src": "chrome-extension://hecbjbifaedeamedhmgdhemkfglaeflc/_favicon/?pageUrl=https%3A%2F%2Fexample.org%2Fwalking-routes&size=32"
+    },
+    {
+      "loaded": true,
+      "src": "chrome-extension://hecbjbifaedeamedhmgdhemkfglaeflc/_favicon/?pageUrl=https%3A%2F%2Fexample.org%2Flentil-soup&size=32"
+    }
+  ],
+  "pageErrors": [],
+  "source": "Installed extension; chrome.action.openPopup(); neutral synthetic notes; isolated temporary Chrome profile; no demo adapter. Popup pixels composed at original 380px width."
+}

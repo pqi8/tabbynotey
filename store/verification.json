@@ -1,0 +1,40 @@
+{
+  "date": "2026-10-23",
+  "tests": {
+    "command": "node --test",
+    "passed": 7,
+    "failed": 0
+  },
+  "package": {
+    "path": "dist/tabbynotey-0.2.0.zip",
+    "bytes": 16000,
+    "sha256": "404e1299565b1ef5534db85106359791eadaed2f79a1730d499945200550f49b",
+    "entries": [
+      "background.js",
+      "icons/128.png",
+      "icons/16.png",
+      "icons/32.png",
+      "icons/48.png",
+      "manifest.json",
+      "notes.js",
+      "popup.css",
+      "popup.html",
+      "popup.js"
+    ],
+    "only_extension_files": true,
+    "each_entry_matches_source": true,
+    "integrity": "passed"
+  },
+  "short_description_characters": 59,
+  "image_dimensions": "passed",
+  "store_icon_alpha_bounds": [
+    16,
+    16,
+    112,
+    112
+  ],
+  "changes": [
+    "128px icon padded to 96px artwork on a transparent 128px canvas; generator updated. No behavior changes."
+  ],
+  "network_and_accounts": "No account, payment, upload, submission, publication, GitHub push, or gist creation performed."
+}
