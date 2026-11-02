@@ -20,9 +20,13 @@ export function savedNotes(items, query = '') {
   return Object.entries(items)
     .filter(([key, value]) => key.startsWith(PREFIX) && value &&
       supportedUrl(value.url) && typeof value.text === 'string' && value.text.trim())
-    .map(([key, value]) => ({ ...value, id: key.slice(PREFIX.length), createdAt: value.createdAt || value.updatedAt || 0 }))
+    .map(([key, value]) => {
+      // Records written by older versions may lack one of the timestamps.
+      const updatedAt = value.updatedAt || value.createdAt || 0;
+      return { ...value, id: key.slice(PREFIX.length), createdAt: value.createdAt || updatedAt, updatedAt };
+    })
     .filter(note => [note.title, note.url, note.text].join(' ').toLocaleLowerCase().includes(needle))
-    .sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0));
+    .sort((a, b) => b.updatedAt - a.updatedAt);
 }
 
 // Keep query strings and fragments: different documents can share a path.

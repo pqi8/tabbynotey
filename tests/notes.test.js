@@ -29,6 +29,18 @@ test('library filters unsafe or empty records and searches and sorts notes', () 
   assert.equal(savedNotes(items, 'b.test')[0].title, 'Roadmap');
 });
 
+test('records missing a timestamp fall back to the other one', () => {
+  const items = {
+    'note:legacy': { url: 'https://a.test', text: 'Old', createdAt: 5 },
+    'note:imported': { url: 'https://a.test', text: 'Imported', updatedAt: 9 },
+    'note:bare': { url: 'https://a.test', text: 'Bare' },
+  };
+  const [imported, legacy, bare] = savedNotes(items);
+  assert.deepEqual([legacy.createdAt, legacy.updatedAt], [5, 5]);
+  assert.deepEqual([imported.createdAt, imported.updatedAt], [9, 9]);
+  assert.deepEqual([bare.createdAt, bare.updatedAt], [0, 0]);
+});
+
 test('page notes match the exact URL, newest first, and include 0.1.0 records', () => {
   const items = {
     'note:1': { id: '1', url: 'https://a.test/?id=1', text: 'old', createdAt: 1, updatedAt: 9 },

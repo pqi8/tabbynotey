@@ -15,6 +15,9 @@
   --primary-text: #fafaf9;
   --danger: #c4321f;
   --danger-soft: #fbeae7;
+  --due: #a15c07;
+  --due-soft: #fdf1e0;
+  --due-border: #e8c48f;
   --shadow: 0 1px 2px #1c1c1a0a, 0 2px 8px #1c1c1a08;
   font: 13px/1.5 system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   color: var(--text);
@@ -38,11 +41,49 @@
     --primary-text: #18181a;
     --danger: #f07a68;
     --danger-soft: #3a2421;
+    --due: #f2b25c;
+    --due-soft: #3a2d1b;
+    --due-border: #7a5626;
     --shadow: none;
   }
 }
 
 * { box-sizing: border-box; }
+:root[data-custom-accent] {
+  --accent: color-mix(in srgb, var(--chosen-accent), black 60%);
+  --accent-soft: color-mix(in srgb, var(--chosen-accent) 12%, white);
+  --focus: color-mix(in srgb, var(--accent) 40%, transparent);
+  --primary-bg: var(--accent);
+  --primary-text: #ffffff;
+  --bg: oklch(from var(--chosen-accent) 0.94 min(c, 0.06) h);
+  --surface: oklch(from var(--chosen-accent) 0.98 min(c, 0.025) h);
+  --surface-hover: oklch(from var(--chosen-accent) 0.90 min(c, 0.07) h);
+  --border: oklch(from var(--chosen-accent) 0.79 min(c, 0.07) h);
+  --border-strong: oklch(from var(--chosen-accent) 0.64 min(c, 0.09) h);
+  --text: #171c20;
+  --text-2: #36434a;
+  --text-3: #48565e;
+}
+@media (prefers-color-scheme: dark) {
+  :root[data-custom-accent] {
+    --accent: color-mix(in srgb, var(--chosen-accent), white 65%);
+    --accent-soft: oklch(from var(--chosen-accent) 0.34 min(c, 0.12) h);
+    --primary-text: #18181a;
+    --bg: oklch(from var(--chosen-accent) 0.40 min(c, 0.12) h);
+    --surface: oklch(from var(--chosen-accent) 0.46 min(c, 0.12) h);
+    --surface-hover: oklch(from var(--chosen-accent) 0.50 min(c, 0.12) h);
+    --border: oklch(from var(--chosen-accent) 0.59 min(c, 0.10) h);
+    --border-strong: oklch(from var(--chosen-accent) 0.72 min(c, 0.10) h);
+    --text: #ffffff;
+    --text-2: #edf3f5;
+    --text-3: #e0e9ec;
+  }
+}
+.appearance { margin-top: 16px; padding-top: 12px; border-top: 1px solid var(--border); }
+.appearance summary { cursor: pointer; color: var(--text-2); }
+.appearance label { margin-right: auto; }
+.appearance input[type="color"] { width: 36px; height: 28px; padding: 2px; border: 1px solid var(--border-strong); border-radius: 6px; background: var(--surface); cursor: pointer; }
+.appearance p { margin: 8px 0 0; }
 body { width: 380px; margin: 0; font: inherit; }
 button, input, textarea { font: inherit; color: inherit; }
 button { cursor: pointer; border: 0; background: none; padding: 0; }
@@ -101,7 +142,11 @@ input[type="search"] { padding: 7px 10px; height: 32px; }
 .note { padding: 10px 12px; border: 1px solid var(--border); border-radius: 8px; background: var(--surface); box-shadow: var(--shadow); }
 .note-text { margin: 0; white-space: pre-wrap; overflow-wrap: anywhere; }
 .note .bar { margin-top: 6px; min-height: 26px; }
-.note time { margin-right: auto; color: var(--text-3); font-size: 12px; }
+.note .meta { display: flex; align-items: center; gap: 8px; min-width: 0; margin-right: auto; }
+.note time { color: var(--text-3); font-size: 12px; }
+.note.due { border-color: var(--due-border); }
+.note.reminding { border-color: var(--accent); }
+.note.reminding .remind { margin-top: 8px; padding: 0; border: 0; }
 .note .actions { display: flex; gap: 2px; opacity: 0; transition: opacity .15s; }
 .note:hover .actions, .note:focus-within .actions { opacity: 1; }
 .note.editing { border-color: var(--accent); box-shadow: 0 0 0 3px var(--focus); }
@@ -120,3 +165,34 @@ input[type="search"] { padding: 7px 10px; height: 32px; }
 
 .empty { margin: 24px 0; text-align: center; color: var(--text-3); }
 .error { margin: 12px 0 0; padding: 10px 12px; border-radius: 8px; background: var(--danger-soft); color: var(--danger); font-size: 12px; }
+
+/* Reminders */
+.icon.on, .icon[aria-expanded="true"] { background: var(--accent-soft); color: var(--accent); }
+.icon:disabled { opacity: .4; }
+.icon:disabled:hover { background: none; color: var(--text-3); }
+.remind { margin-top: 8px; padding: 10px; border: 1px solid var(--border); border-radius: 8px; background: var(--surface); }
+.remind-label { display: block; padding: 0; margin-bottom: 6px; color: var(--text-2); font-size: 12px; font-weight: 500; }
+.remind input[type="datetime-local"] { width: 100%; height: 30px; padding: 0 8px; border: 1px solid var(--border); border-radius: 6px; background: var(--surface); }
+.remind input[type="datetime-local"]:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px var(--focus); }
+.alert-options { display: grid; grid-template-columns: 1fr 1fr; gap: 2px 12px; margin: 10px 0 0; padding: 0; border: 0; }
+.alert-options legend { grid-column: 1 / -1; }
+.alert-option { display: flex; align-items: center; gap: 6px; padding: 3px 0; cursor: pointer; }
+.alert-option input { margin: 0; accent-color: var(--accent); }
+.pill { display: inline-flex; flex: none; align-items: center; gap: 4px; height: 20px; padding: 0 7px; border-radius: 10px; background: var(--accent-soft); color: var(--accent); font-size: 11px; font-weight: 600; }
+.pill svg { width: 11px; height: 11px; }
+.pill.due { background: var(--due-soft); color: var(--due); }
+
+/* Waiting alerts, shown above everything when the popup opens for a reminder */
+.alerts { display: flex; flex-direction: column; gap: 8px; margin-bottom: 16px; padding-bottom: 16px; border-bottom: 1px solid var(--border); }
+.alerts-heading { display: flex; align-items: center; gap: 6px; margin: 0; color: var(--due); font-size: 12px; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; }
+.alerts-heading svg { width: 14px; height: 14px; }
+.note.alert { padding: 12px; }
+.note.alert.due { border-color: var(--due-border); background: var(--due-soft); }
+.alert-head { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+.alert-head .pill { margin-left: auto; }
+.alert-page { display: flex; flex: 1; align-items: center; gap: 8px; min-width: 0; margin: -3px -6px; padding: 3px 6px; border-radius: 6px; color: var(--text-2); font-size: 12px; font-weight: 500; text-align: left; }
+.alert-page:hover { background: color-mix(in srgb, var(--text) 6%, transparent); color: var(--text); }
+.alert-page span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.alert-page .favicon { margin-top: 0; }
+.note.alert .note-text { font-size: 14px; font-weight: 500; }
+.note.alert .bar { justify-content: flex-end; margin-top: 10px; }

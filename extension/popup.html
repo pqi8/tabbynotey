@@ -12,6 +12,7 @@
     <button id="all-tab">All notes<span id="count" class="count" hidden></span></button>
   </nav>
   <main>
+    <section id="alerts" class="alerts" aria-label="Reminders" hidden></section>
     <section id="editor" aria-label="This page">
       <div class="page">
         <img id="page-icon" class="favicon" alt="" hidden>
@@ -23,8 +24,10 @@
       <div id="composer" class="composer" hidden>
         <label class="sr-only" for="note">New note</label>
         <textarea id="note" placeholder="Add a note…" maxlength="20000"></textarea>
+        <div id="composer-reminder" hidden></div>
         <div id="composer-bar" class="bar" hidden>
           <span id="status" class="status" role="status" aria-live="polite"></span>
+          <button id="remind" class="icon" aria-label="Remind me" title="Remind me" aria-expanded="false" aria-controls="composer-reminder"></button>
           <button id="discard" class="ghost">Discard</button>
           <button id="save" class="primary" disabled>Add note <kbd id="shortcut">⌘↵</kbd></button>
         </div>
@@ -40,6 +43,16 @@
       <div id="notes"></div>
     </section>
     <p id="error" class="error" role="alert" hidden></p>
+    <details class="appearance">
+      <summary>Appearance</summary>
+      <div class="bar">
+        <label for="accent-color">Accent color</label>
+        <input id="accent-color" type="color" value="#2f6b57" disabled>
+        <button id="pick-color" class="ghost" hidden disabled>Pick from screen</button>
+        <button id="reset-color" class="ghost" disabled>Reset</button>
+      </div>
+      <p id="color-status" class="status" role="status">Follows light and dark mode. Saved on this device.</p>
+    </details>
   </main>
   <script type="module" src="popup.js"></script>
 </body>

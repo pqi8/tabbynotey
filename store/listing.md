@@ -18,6 +18,8 @@ Open the extension on a web page and type a note. Your text saves as you type. U
 
 This page shows notes for the current URL. All notes groups your saved notes by page. Search by note text, page title, or URL, and click a page heading to return to it. You can edit or delete notes and export them as a JSON backup.
 
+Add a reminder to any note: click the bell, pick a date and time, and choose when to be alerted (24 hours, 1 hour, 30, 15 or 5 minutes before, or at the time). When an alert is due, the toolbar icon becomes a ringing bell and TabbyNotey opens to show the reminder, with Open page and Dismiss. If you're in another app at the time, it opens when you return to Chrome.
+
 Notes stay in chrome.storage.local in this Chrome profile on this device. There is no account, sync, analytics, or transmission to the developer or another service. The extension reads open tabs' URLs to update badges and find already-open pages; it stores the full URL and page title only when you write a note. It displays page icons through Chrome's favicon service. It never reads or changes page content.
 
 Notes match the complete URL, including query parameters and fragments. Browser-internal pages and local files are unsupported. Uninstalling removes the extension's stored notes, so export first if you want a backup. Exported files include note text, full URLs, titles, and timestamps. Import is not available.
@@ -42,7 +44,11 @@ The background service worker reads open tabs' URLs to match locally saved notes
 
 ## Permission justification: storage
 
-Save note text, full page URLs, page titles, note IDs, and creation/edit timestamps in chrome.storage.local so notes persist across popup closes and browser restarts in this profile. No chrome.storage.sync or external storage is used.
+Save note text, full page URLs, page titles, note IDs, creation/edit timestamps, and any reminder time and alert choices the user sets in chrome.storage.local so notes and reminders persist across popup closes and browser restarts in this profile. No chrome.storage.sync or external storage is used.
+
+## Permission justification: alarms
+
+Wake the background service worker at the times the user chose for a note's reminder alerts (for example 1 hour before and at the time), so the toolbar icon can ring and the popup can show the reminder. Alarms are created only for reminders the user sets and are cleared when a reminder is dismissed or its note is deleted. Nothing is sent anywhere.
 
 ## Permission justification: favicon
 
@@ -94,7 +100,7 @@ Paste the final public HTTPS URL for privacy.html after hosting it. No policy ha
 
 ## Test instructions for reviewer
 
-No login or credentials needed. Open any HTTP(S) page, pin TabbyNotey, and click its toolbar icon. Type a note, then click Add note. Add a second note and check that the badge displays 2. Open All notes, search, edit a note, and click a page heading to return to it. Export downloads JSON. Delete asks for confirmation. Browser-internal pages do not accept notes, but All notes remains available. Notes persist locally across browser restarts.
+No login or credentials needed. Open any HTTP(S) page, pin TabbyNotey, and click its toolbar icon. Type a note, then click Add note. Add a second note and check that the badge displays 2. Open All notes, search, edit a note, and click a page heading to return to it. Export downloads JSON. Delete asks for confirmation. Browser-internal pages do not accept notes, but All notes remains available. Notes persist locally across browser restarts. Reminders: on a saved note click the bell icon, pick a time two minutes ahead, keep "At the time" ticked, and click Done. When the time arrives the toolbar icon becomes a swinging amber bell and the popup opens with the reminder (if Chrome is not the front app, it opens on returning to Chrome). Dismiss turns the bell back off.
 
 ## Official references
 

@@ -1,5 +1,25 @@
 # Verification
 
+## Color picker build 0.2.2 — 2026-10-24
+
+- Eleven unit tests, extension module syntax, and whitespace checks pass. All eleven release ZIP entries match source byte for byte, including the extracted appearance module.
+- Appearance handling is isolated in `appearance.js`. Regression tests cover queued saves followed by reset, storage failure/retry, and stale save completions during color preview or eyedropper cancellation. Repeated installed-ZIP smoke checks after extraction: no popup errors, note workflows and appearance persistence/reset pass.
+- Installed the ZIP in isolated Chrome 156.0.8078.48 and repeated the 0.2.1 note/edit/search/delete/badge checks with no page errors.
+- Verified custom color persistence after reload, light/dark palette changes, resetting and reopening, and the presence of Chrome's native EyeDropper API. Visually inspected both appearance layouts.
+- Updated the custom palette to color the full panel, note cards, inputs, and borders. Checked 132 text/background combinations across eleven colors in light/dark mode; minimum contrast was 4.79:1. Regenerated Shevaun's teal preview from the installed extension's rendered DOM and checked all three preview views at 728px and 360px.
+- Verified screen-pick success and Esc cancellation handling using controlled EyeDropper results. Actual native sampling from Chrome's toolbar requires a manual desktop check; headless checks do not verify that interaction.
+- Submitted 0.2.2 to the existing unlisted Web Store item with automatic publishing enabled, replacing the canceled 0.2.1 review. Google confirmed submission. Published version remains 0.2.0 pending approval.
+
+## Cleanup release 0.2.1 — 2026-10-24
+
+- `npm test`: eight tests pass, including missing-timestamp fallback.
+- Syntax checks pass for all three extension JavaScript modules; `git diff --check` passes.
+- Packaged `dist/tabbynotey-0.2.1.zip`; verified all ten archive entries match the extension source byte for byte.
+- Installed the extracted release ZIP in an isolated headless Chrome 156.0.8078.48 profile using the Puppeteer workflow documented in `store/capture.mjs`. Passed creating/autosaving a note, editing/autosaving, initial editor focus, retaining search focus while an editor is open, rendering records with one or both timestamps missing, confirmed deletion, and badge counts after reload. No popup page errors.
+- Permissions remain `tabs`, `storage`, and `favicon`.
+
+## Earlier verification
+
 Checked on 2026-10-22 for 0.2.0.
 
 - `npm test`: seven tests pass. They cover URL support, unique ids per note, library filtering/search/sort, exact-URL page lists that include 0.1.0 records, badge text, ordered rapid saves with blank-text deletion, and storage-failure recovery.

@@ -1,5 +1,13 @@
 # Publish TabbyNotey yourself
 
+## Current release status — 2026-10-24
+
+TabbyNotey is published as **unlisted**, item ID `bdenoogchniaigmpigpkhhmfmkffaimg`, under Patrick Qi (`patrick.qi@gmail.com`). The live version observed in the dashboard is **0.2.0**. Canceled the superseded **0.2.1** review, uploaded the verified **0.2.2** ZIP to that same item, and submitted it for review with automatic publishing enabled. The dashboard confirmed “Your extension was submitted for review.” Permissions remain `tabs`, `storage`, and `favicon`. Approval and publication of 0.2.2 are pending.
+
+Store listing: https://chromewebstore.google.com/detail/tabbynotey/bdenoogchniaigmpigpkhhmfmkffaimg
+
+The instructions below are the original preparation guide; their statements about nothing having been uploaded or published describe the 2026-10-23 preparation task only.
+
 Prepared 2026-10-23 for 0.2.0. Everything in this folder is local. No account was accessed or registered, no payment made, and nothing was hosted, uploaded, submitted, or published.
 
 ## 1. Register Patrick's personal publisher
@@ -14,7 +22,7 @@ Prepared 2026-10-23 for 0.2.0. Everything in this folder is local. No account wa
 
 ## 2. Host the privacy page
 
-Choose a permanent public HTTPS URL. Recommended: a personal GitHub Pages repository. This checkout is not a Git repository; these steps do not require converting or pushing it.
+Choose a permanent public HTTPS URL. Recommended: a personal GitHub Pages repository. These steps do not require pushing this checkout; only the policy file needs to be uploaded.
 
 1. In your personal GitHub account, create or choose a public repository for the extension's policy, for example **tabbynotey-privacy**.
 2. In that repository, click **Add file → Upload files**. Select this folder's **privacy.html**. Commit it to the default branch using GitHub's UI.
@@ -46,7 +54,7 @@ For a final personal smoke check, use a disposable Chrome profile, open `chrome:
 4. Choose **Productivity** (and **Tools** if available as a subcategory), and **English (United States)**. Use the closest available Productivity category if the dashboard's taxonomy differs.
 5. Upload **store/icon-128.png** as the store icon, **store/screenshot-this-page.png** then **store/screenshot-all-notes.png** as screenshots, and **store/promo-small.png** as the small promo tile. Do not upload the *-popup.png source crops. Leave video and marquee blank unless you decide to add them.
 6. Set the public contact email to **patrick.qi@gmail.com** wherever requested. Leave website/support-site fields blank unless you have actual URLs to supply. Do not invent URLs. Click **Save draft**.
-7. Open **Privacy practices** (called Privacy in some documentation). Paste the single purpose and separate **tabs**, **storage**, and **favicon** justifications from listing.md. For remote code choose **No, I am not using remote code**.
+7. Open **Privacy practices** (called Privacy in some documentation). Paste the single purpose and separate **tabs**, **storage**, **alarms**, and **favicon** justifications from listing.md. For remote code choose **No, I am not using remote code**.
 8. In data usage, select **Web history** for URLs/titles and **Website content** for locally authored note text, following the mapping note in listing.md. Check all three certifications. Paste the publicly hosted **privacy.html** URL in the privacy policy field. Save.
 9. Open **Distribution**. Set the item to **Free**, indicate no in-app purchases if asked, choose **Unlisted**, and choose your intended regions (All regions is a reasonable default). Save. Unlisted still permits anyone with its store URL to install and still requires review.
 10. Open **Test instructions**. Paste the reviewer instructions from listing.md. No credentials are needed.
