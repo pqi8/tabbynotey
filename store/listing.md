@@ -100,7 +100,9 @@ Paste the final public HTTPS URL for privacy.html after hosting it. No policy ha
 
 ## Test instructions for reviewer
 
-No login or credentials needed. Open any HTTP(S) page, pin TabbyNotey, and click its toolbar icon. Type a note, then click Add note. Add a second note and check that the badge displays 2. Open All notes, search, edit a note, and click a page heading to return to it. Export downloads JSON. Delete asks for confirmation. Browser-internal pages do not accept notes, but All notes remains available. Notes persist locally across browser restarts. Reminders: on a saved note click the bell icon, pick a time two minutes ahead, keep "At the time" ticked, and click Done. When the time arrives the toolbar icon becomes a swinging amber bell and the popup opens with the reminder (if Chrome is not the front app, it opens on returning to Chrome). Dismiss turns the bell back off.
+Must fit the dashboard's 500-character limit.
+
+No login needed. Open any HTTP(S) page, pin TabbyNotey, click its icon, type a note and click Add note; the badge shows the count. All notes searches, edits and deletes notes. Reminders: on a saved note click the bell, pick a time 2 minutes ahead, keep "At the time" ticked, click Done. When due, the toolbar icon becomes a swinging amber bell and the popup opens with the reminder (or when Chrome is next in front). Dismiss stops the bell.
 
 ## Official references
 
