@@ -1,8 +1,8 @@
 # Publish TabbyNotey yourself
 
-## Current release status — 2026-10-24
+## Current release status — 2026-11-01
 
-TabbyNotey is published as **unlisted**, item ID `bdenoogchniaigmpigpkhhmfmkffaimg`, under Patrick Qi (`patrick.qi@gmail.com`). The live version observed in the dashboard is **0.2.0**. Canceled the superseded **0.2.1** review, uploaded the verified **0.2.2** ZIP to that same item, and submitted it for review with automatic publishing enabled. The dashboard confirmed “Your extension was submitted for review.” Permissions remain `tabs`, `storage`, and `favicon`. Approval and publication of 0.2.2 are pending.
+TabbyNotey is published as **unlisted**, item ID `bdenoogchniaigmpigpkhhmfmkffaimg`, under Patrick Qi (`patrick.qi@gmail.com`). **0.2.2** is live. **0.3.0** (note reminders, adds the `alarms` permission) was uploaded to the same item on 2026-11-01 with an updated description, `alarms` and storage justifications, and shorter reviewer instructions (the field is limited to 500 characters). It was submitted for review with automatic publishing enabled; the dashboard shows **Pending review**. The hosted privacy policy at https://pqi8.github.io/tabbynotey/store/privacy.html was updated first to mention stored reminder times.
 
 Store listing: https://chromewebstore.google.com/detail/tabbynotey/bdenoogchniaigmpigpkhhmfmkffaimg
 
