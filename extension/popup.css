@@ -146,7 +146,7 @@ input[type="search"] { padding: 7px 10px; height: 32px; }
 .note time { color: var(--text-3); font-size: 12px; }
 .note.due { border-color: var(--due-border); }
 .note.reminding { border-color: var(--accent); }
-.note.reminding .remind { margin-top: 8px; padding: 0; border: 0; }
+.note.reminding .remind { margin-top: 10px; padding: 10px 0 0; border: 0; border-top: 1px solid var(--border); border-radius: 0; background: none; }
 .note .actions { display: flex; gap: 2px; opacity: 0; transition: opacity .15s; }
 .note:hover .actions, .note:focus-within .actions { opacity: 1; }
 .note.editing { border-color: var(--accent); box-shadow: 0 0 0 3px var(--focus); }
@@ -170,14 +170,35 @@ input[type="search"] { padding: 7px 10px; height: 32px; }
 .icon.on, .icon[aria-expanded="true"] { background: var(--accent-soft); color: var(--accent); }
 .icon:disabled { opacity: .4; }
 .icon:disabled:hover { background: none; color: var(--text-3); }
-.remind { margin-top: 8px; padding: 10px; border: 1px solid var(--border); border-radius: 8px; background: var(--surface); }
-.remind-label { display: block; padding: 0; margin-bottom: 6px; color: var(--text-2); font-size: 12px; font-weight: 500; }
-.remind input[type="datetime-local"] { width: 100%; height: 30px; padding: 0 8px; border: 1px solid var(--border); border-radius: 6px; background: var(--surface); }
-.remind input[type="datetime-local"]:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px var(--focus); }
-.alert-options { display: grid; grid-template-columns: 1fr 1fr; gap: 2px 12px; margin: 10px 0 0; padding: 0; border: 0; }
-.alert-options legend { grid-column: 1 / -1; }
-.alert-option { display: flex; align-items: center; gap: 6px; padding: 3px 0; cursor: pointer; }
-.alert-option input { margin: 0; accent-color: var(--accent); }
+.remind { margin-top: 8px; padding: 12px; border: 1px solid var(--border); border-radius: 8px; background: var(--surface); }
+.remind-head { display: flex; align-items: center; justify-content: space-between; min-height: 26px; margin: -4px 0 4px; }
+.remind-label { color: var(--text-2); font-size: 12px; font-weight: 500; }
+.remind-row { display: grid; grid-template-columns: 44px 1fr; align-items: center; gap: 8px; margin-top: 10px; }
+.remind-row.alerts-row { align-items: start; }
+.remind-row.alerts-row .remind-label { line-height: 26px; }
+.remind .bar { margin-top: 10px; }
+
+.calendar .bar { margin: 0 0 4px; gap: 2px; }
+.cal-title { margin-right: auto; font-weight: 600; }
+.cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px; }
+.cal-weekday { display: grid; place-items: center; height: 22px; color: var(--text-3); font-size: 11px; font-weight: 500; }
+.day { height: 28px; border-radius: 6px; font-variant-numeric: tabular-nums; transition: background .15s, color .15s; }
+.day:hover:not(:disabled) { background: var(--surface-hover); }
+.day.today { color: var(--accent); font-weight: 700; }
+.day[aria-pressed="true"] { background: var(--accent); color: var(--surface); font-weight: 600; }
+.day[aria-pressed="true"]:hover { background: var(--accent); }
+.day:disabled { color: var(--text-3); opacity: .45; }
+.icon.cal-nav:disabled { opacity: .3; }
+
+.remind input[type="time"] { justify-self: start; height: 28px; padding: 0 8px; border: 1px solid var(--border); border-radius: 6px; background: var(--surface); font-variant-numeric: tabular-nums; }
+.remind input[type="time"]::-webkit-calendar-picker-indicator { display: none; }
+.remind input[type="time"]:hover { border-color: var(--border-strong); }
+.remind input[type="time"]:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px var(--focus); }
+
+.chips { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+.chip { height: 26px; padding: 0 8px; border: 1px solid var(--border); border-radius: 13px; color: var(--text-2); font-size: 12px; font-weight: 500; white-space: nowrap; transition: background .15s, border-color .15s, color .15s; }
+.chip:hover { border-color: var(--border-strong); color: var(--text); }
+.chip[aria-pressed="true"] { border-color: transparent; background: var(--accent-soft); color: var(--accent); }
 .pill { display: inline-flex; flex: none; align-items: center; gap: 4px; height: 20px; padding: 0 7px; border-radius: 10px; background: var(--accent-soft); color: var(--accent); font-size: 11px; font-weight: 600; }
 .pill svg { width: 11px; height: 11px; }
 .pill.due { background: var(--due-soft); color: var(--due); }

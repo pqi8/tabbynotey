@@ -2,7 +2,7 @@
 
 ## Current release status — 2026-11-01
 
-TabbyNotey is published as **unlisted**, item ID `bdenoogchniaigmpigpkhhmfmkffaimg`, under Patrick Qi (`patrick.qi@gmail.com`). **0.2.2** is live. **0.3.0** (note reminders, adds the `alarms` permission) was uploaded to the same item on 2026-11-01 with an updated description, `alarms` and storage justifications, and shorter reviewer instructions (the field is limited to 500 characters). It was submitted for review with automatic publishing enabled; the dashboard shows **Pending review**. The hosted privacy policy at https://pqi8.github.io/tabbynotey/store/privacy.html was updated first to mention stored reminder times.
+TabbyNotey is published as **unlisted**, item ID `bdenoogchniaigmpigpkhhmfmkffaimg`, under Patrick Qi (`patrick.qi@gmail.com`). **0.2.2** is live. **0.3.0** (note reminders, adds the `alarms` permission) was uploaded to the same item on 2026-11-01 with an updated description, `alarms` and storage justifications, and shorter reviewer instructions (the field is limited to 500 characters). It was submitted for review with automatic publishing enabled. Later that day the review was cancelled and **0.3.1** (a redesigned reminder panel with an inline calendar, a time field and alert chips; no permission or data changes) was uploaded and resubmitted in its place, again with automatic publishing. The hosted privacy policy at https://pqi8.github.io/tabbynotey/store/privacy.html was updated first to mention stored reminder times.
 
 Store listing: https://chromewebstore.google.com/detail/tabbynotey/bdenoogchniaigmpigpkhhmfmkffaimg
 

@@ -5,7 +5,7 @@ A Chrome extension for leaving notes on a page, so you remember why you kept it 
 ## Install
 
 1. Open `chrome://extensions` in Chrome and enable **Developer mode**.
-2. Click **Load unpacked** and select this repo's `extension` folder. Alternatively unzip `dist/tabbynotey-0.3.0.zip` and select its extracted folder.
+2. Click **Load unpacked** and select this repo's `extension` folder. Alternatively unzip `dist/tabbynotey-0.3.1.zip` and select its extracted folder.
 3. Pin **TabbyNotey** from Chrome's Extensions menu.
 4. Open a webpage, click the extension, and type a note. It saves as you type. **Add note** (⌘/Ctrl+Enter) files it and clears the box for the next one.
 

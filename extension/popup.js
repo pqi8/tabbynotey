@@ -20,6 +20,8 @@ const ICONS = {
   edit: '<path d="M21.17 6.81a1 1 0 0 0-3.99-3.99L3.84 16.17a2 2 0 0 0-.5.83l-1.32 4.35a.5.5 0 0 0 .62.62l4.35-1.32a2 2 0 0 0 .83-.5z"/><path d="m15 5 4 4"/>',
   trash: '<path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/>',
   open: '<path d="M7 7h10v10"/><path d="M7 17 17 7"/>',
+  left: '<path d="m15 18-6-6 6-6"/>',
+  right: '<path d="m9 18 6-6-6-6"/>',
   bell: '<path d="M10.27 21a2 2 0 0 0 3.46 0"/><path d="M3.26 15.33A1 1 0 0 0 4 17h16a1 1 0 0 0 .74-1.67C19.41 13.96 18 12.5 18 8A6 6 0 0 0 6 8c0 4.5-1.41 5.96-2.74 7.33"/>',
 };
 
@@ -123,37 +125,84 @@ async function saveReminder(noteId, reminder) {
   else { await storage.remove(key); delete items[key]; }
 }
 
-// Date and time, plus which alerts to send. Saves on every valid change, like notes do.
-function reminderPanel(noteId, onDone) {
+// Short chip labels; the full wording stays in each chip's tooltip and accessible name.
+const CHIP = { 1440: '1 day', 60: '1 hour', 30: '30 min', 15: '15 min', 5: '5 min', 0: 'At time' };
+const dayKey = time => toLocalInput(time).slice(0, 10);
+
+// A month calendar sized for the popup. Chrome's own date-time picker spills past the popup's edge.
+function calendar(state, onPick) {
+  const root = el('div', 'calendar');
+  const today = dayKey(Date.now());
+  const thisMonth = new Date(); thisMonth.setDate(1); thisMonth.setHours(0, 0, 0, 0);
+
+  function draw() {
+    const month = state.month;
+    const title = el('span', 'cal-title', month.toLocaleDateString(undefined, { month: 'long', year: 'numeric' }));
+    const shift = by => () => { state.month = new Date(month.getFullYear(), month.getMonth() + by, 1); draw(); root.querySelector('.cal-nav:not(:disabled)')?.focus(); };
+    const prev = iconButton('left', 'Previous month', 'cal-nav', shift(-1));
+    prev.disabled = month <= thisMonth;
+    const next = iconButton('right', 'Next month', 'cal-nav', shift(1));
+
+    const grid = el('div', 'cal-grid');
+    grid.setAttribute('role', 'grid');
+    const names = new Intl.DateTimeFormat(undefined, { weekday: 'narrow' });
+    for (let d = 0; d < 7; d++) grid.append(el('span', 'cal-weekday', names.format(new Date(2026, 1, d + 1))));
+    for (let i = 0; i < month.getDay(); i++) grid.append(el('span'));
+    const days = new Date(month.getFullYear(), month.getMonth() + 1, 0).getDate();
+    for (let d = 1; d <= days; d++) {
+      const date = new Date(month.getFullYear(), month.getMonth(), d);
+      const key = dayKey(date.getTime());
+      const day = button(String(d), 'day', () => { state.day = key; draw(); root.querySelector('.day[aria-pressed="true"]')?.focus(); onPick(); });
+      day.setAttribute('aria-label', date.toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' }));
+      day.setAttribute('aria-pressed', key === state.day);
+      if (key === today) day.classList.add('today');
+      day.disabled = key < today;
+      grid.append(day);
+    }
+    root.replaceChildren(bar(title, prev, next), grid);
+  }
+  draw();
+  return root;
+}
+
+// Pick a day, a time, and which alerts to send. Saves on every valid change, like notes do.
+function reminderPanel(noteId, onDone, { done = false } = {}) {
   const existing = reminderFor(noteId);
   const panel = el('div', 'remind');
-  const when = el('input');
-  when.type = 'datetime-local';
-  when.min = toLocalInput(Date.now());
-  when.value = existing ? toLocalInput(existing.at) : '';
-  when.id = 'remind-at-' + crypto.randomUUID();
-  const label = el('label', 'remind-label', 'Remind me');
-  label.htmlFor = when.id;
+  panel.setAttribute('role', 'group');
+  panel.setAttribute('aria-label', 'Reminder');
 
-  const alerts = el('fieldset', 'alert-options');
-  alerts.append(el('legend', 'remind-label', 'Alert me'));
-  const selected = existing?.alerts ?? DEFAULT_ALERTS;
+  const start = new Date(existing?.at ?? Date.now());
+  const state = { day: existing ? dayKey(existing.at) : '', month: new Date(start.getFullYear(), start.getMonth(), 1) };
+
+  // A new reminder starts at the next whole hour, so picking a day is usually enough.
+  const time = el('input');
+  time.type = 'time';
+  time.step = 60;
+  time.value = toLocalInput(existing?.at ?? Math.ceil((Date.now() + 1) / 3600000) * 3600000).slice(11);
+  time.setAttribute('aria-label', 'Time');
+
+  const selected = new Set(existing?.alerts ?? DEFAULT_ALERTS);
+  const chips = el('div', 'chips');
   for (const [minutes, text] of ALERTS) {
-    const option = el('label', 'alert-option');
-    const box = el('input');
-    box.type = 'checkbox';
-    box.value = minutes;
-    box.checked = selected.includes(minutes);
-    option.append(box, text);
-    alerts.append(option);
+    const chip = button(CHIP[minutes], 'chip', () => {
+      selected.has(minutes) ? selected.delete(minutes) : selected.add(minutes);
+      chip.setAttribute('aria-pressed', selected.has(minutes));
+      save();
+    });
+    chip.title = text;
+    chip.setAttribute('aria-label', text);
+    chip.setAttribute('aria-pressed', selected.has(minutes));
+    chips.append(chip);
   }
 
   const status = el('span', 'status');
   status.setAttribute('role', 'status');
-  const remove = button('Remove', 'ghost', async () => {
+  const remove = iconButton('trash', 'Remove reminder', 'delete', async () => {
     try {
       await saveReminder(noteId, undefined);
-      when.value = '';
+      state.day = '';
+      cal.replaceWith(cal = calendar(state, save));
       remove.hidden = true;
       status.className = 'status';
       status.textContent = 'Reminder removed';
@@ -164,14 +213,14 @@ function reminderPanel(noteId, onDone) {
   if (existing) status.textContent = dueText(existing.at);
 
   async function save() {
-    const at = fromLocalInput(when.value);
-    const chosen = [...alerts.querySelectorAll('input:checked')].map(box => Number(box.value));
-    const problem = reminderProblem(at, chosen);
-    status.className = problem ? 'status warn' : 'status';
-    // Ticking alerts before picking a time isn't an error worth flagging yet.
-    if (problem) { status.textContent = when.value || existing ? problem : ''; return; }
+    const at = state.day ? fromLocalInput(`${state.day}T${time.value}`) : NaN;
+    const problem = reminderProblem(at, [...selected]);
+    // Choosing alerts before a day isn't an error worth flagging yet.
+    const waiting = !state.day && !existing;
+    status.className = problem && !waiting ? 'status warn' : 'status';
+    if (problem) { status.textContent = waiting ? '' : problem; return; }
     try {
-      await saveReminder(noteId, newReminder(at, chosen));
+      await saveReminder(noteId, newReminder(at, [...selected]));
       remove.hidden = false;
       status.textContent = dueText(at);
       renderCounts();
@@ -180,12 +229,24 @@ function reminderPanel(noteId, onDone) {
       status.textContent = 'Not saved';
     }
   }
-  when.addEventListener('change', save);
-  alerts.addEventListener('change', save);
-  when.addEventListener('keydown', event => { if (event.key === 'Escape') { event.preventDefault(); onDone(); } });
+  time.addEventListener('change', save);
+  panel.addEventListener('keydown', event => { if (event.key === 'Escape') { event.preventDefault(); event.stopPropagation(); onDone(); } });
 
-  panel.append(label, when, alerts, bar(status, remove, button('Done', 'primary', onDone)));
+  let cal = calendar(state, save);
+  const head = el('div', 'remind-head');
+  head.append(el('span', 'remind-label', 'Remind me'), remove);
+  const timeRow = el('label', 'remind-row');
+  timeRow.append(el('span', 'remind-label', 'Time'), time);
+  const alertRow = el('div', 'remind-row alerts-row');
+  alertRow.append(el('span', 'remind-label', 'Alert'), chips);
+  const foot = done ? bar(status, button('Done', 'primary', onDone)) : bar(status);
+  panel.append(head, cal, timeRow, alertRow, foot);
   return panel;
+}
+
+// Puts the keyboard on the chosen day, or today, when a reminder panel opens.
+function focusReminder(container) {
+  container?.querySelector('.day[aria-pressed="true"], .day.today, .day:not(:disabled)')?.focus({ preventScroll: true });
 }
 
 // Alerts that fired and haven't been handled, from any page. The background opens
@@ -232,7 +293,7 @@ function openComposerReminder() {
   $('composer-reminder').hidden = !open;
   if (!open) { $('composer-reminder').replaceChildren(); $('note').focus(); return; }
   $('composer-reminder').replaceChildren(reminderPanel(draft.id, closeComposerReminder));
-  $('composer-reminder').querySelector('input').focus();
+  focusReminder($('composer-reminder'));
   $('composer-bar').scrollIntoView({ block: 'nearest' });
 }
 
@@ -269,7 +330,7 @@ function noteCard(note, view) {
     ));
   } else if (reminding === note.id && view === currentView()) {
     card.classList.add('reminding');
-    card.append(el('p', 'note-text', note.text), reminderPanel(note.id, () => { reminding = undefined; render(); }));
+    card.append(el('p', 'note-text', note.text), reminderPanel(note.id, () => { reminding = undefined; render(); }, { done: true }));
   } else {
     const reminder = reminderFor(note.id);
     const due = reminder && isDue(reminder, Date.now());
@@ -282,7 +343,7 @@ function noteCard(note, view) {
         render();
         const panel = document.querySelector('.note.reminding');
         panel?.scrollIntoView({ block: 'nearest' });
-        panel?.querySelector('input')?.focus({ preventScroll: true });
+        focusReminder(panel);
       }),
       iconButton('edit', 'Edit note', 'edit', () => openEditor(note)),
       iconButton('trash', 'Delete note', 'delete', () => { confirming = note.id; render(); }),
