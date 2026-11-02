@@ -1,18 +1,17 @@
 import { noteKey, newNote, notesForUrl, savedNotes, supportedUrl, createWriter } from './notes.js';
 import { initAppearance } from './appearance.js';
-import { ALERTS, DEFAULT_ALERTS, activeAlerts, dismissed, dueText, fromLocalInput, isDue, newReminder, relativeTime, reminderKey, reminderProblem, toLocalInput, validReminder, withoutAlert } from './reminders.js';
+import { ALERTS, DEFAULT_ALERTS, activeAlerts, dismissed, dueText, fromLocalInput, isDue, newReminder, relativeTime, reminderProblem, toLocalInput, validReminder, withoutAlert } from './reminders.js';
 import { focusOrOpen } from './pages.js';
 
 const $ = id => document.getElementById(id);
 const storage = chrome.storage.local;
-const write = createWriter(storage);
+const { save: write, setReminder } = createWriter(storage);
 let items = {};
 let page;          // active tab, when it is a web page
 let draft;         // note being composed; saved as you type, listed once added
 let draftWrite = Promise.resolve(true);
 let editing;       // { id, text } of the saved note open for inline editing
 let confirming;    // id of the note awaiting delete confirmation
-let reminding;     // id of the saved note whose reminder editor is open
 let revision = 0;
 
 // Lucide icons (ISC licence), inlined so the popup makes no network requests.
@@ -107,7 +106,10 @@ async function openPage(url) {
 
 // Reminders
 
-const reminderFor = id => validReminder(items[reminderKey(id)]) ? items[reminderKey(id)] : undefined;
+const reminderFor = id => {
+  const reminder = items[noteKey(id)]?.reminder;
+  return validReminder(reminder) ? reminder : undefined;
+};
 const formatWhen = time => new Date(time).toLocaleString(undefined, { weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
 
 function reminderPill(reminder) {
@@ -119,10 +121,10 @@ function reminderPill(reminder) {
   return pill;
 }
 
+// Pass no reminder to clear it.
 async function saveReminder(noteId, reminder) {
-  const key = reminderKey(noteId);
-  if (reminder) { await storage.set({ [key]: reminder }); items[key] = reminder; }
-  else { await storage.remove(key); delete items[key]; }
+  const saved = await setReminder(noteId, reminder ?? undefined);
+  if (saved) items[noteKey(noteId)] = saved;
 }
 
 // Short chip labels; the full wording stays in each chip's tooltip and accessible name.
@@ -165,12 +167,16 @@ function calendar(state, onPick) {
   return root;
 }
 
-// Pick a day, a time, and which alerts to send. Saves on every valid change, like notes do.
-function reminderPanel(noteId, onDone, { done = false } = {}) {
+// The reminder part of a note: a "Remind me" switch, and when it's on, a day, a time,
+// and which alerts to send. Saves on every valid change, like note text does.
+function reminderPanel(noteId, { onEscape } = {}) {
   const existing = reminderFor(noteId);
   const panel = el('div', 'remind');
-  panel.setAttribute('role', 'group');
-  panel.setAttribute('aria-label', 'Reminder');
+
+  const toggle = button(undefined, 'remind-toggle', () => setOn(!on));
+  toggle.setAttribute('role', 'switch');
+  toggle.innerHTML = '<span class="remind-label">Remind me</span><span class="switch" aria-hidden="true"></span>';
+  const body = el('div', 'remind-body');
 
   const start = new Date(existing?.at ?? Date.now());
   const state = { day: existing ? dayKey(existing.at) : '', month: new Date(start.getFullYear(), start.getMonth(), 1) };
@@ -198,30 +204,31 @@ function reminderPanel(noteId, onDone, { done = false } = {}) {
 
   const status = el('span', 'status');
   status.setAttribute('role', 'status');
-  const remove = iconButton('trash', 'Remove reminder', 'delete', async () => {
-    try {
-      await saveReminder(noteId, undefined);
-      state.day = '';
-      cal.replaceWith(cal = calendar(state, save));
-      remove.hidden = true;
-      status.className = 'status';
-      status.textContent = 'Reminder removed';
-      renderCounts();
-    } catch { status.textContent = 'Not removed'; }
-  });
-  remove.hidden = !existing;
-  if (existing) status.textContent = dueText(existing.at);
+  let cal = calendar(state, save);
+
+  let on = Boolean(existing);
+  async function setOn(value) {
+    on = value;
+    toggle.setAttribute('aria-checked', on);
+    body.hidden = !on;
+    status.className = 'status';
+    if (on) { status.textContent = 'Pick a day'; focusReminder(body); return; }
+    // Off means the note has no reminder.
+    state.day = '';
+    cal.replaceWith(cal = calendar(state, save));
+    status.textContent = '';
+    if (!reminderFor(noteId)) return;
+    try { await saveReminder(noteId, undefined); renderCounts(); renderAlerts(); } catch { fail("Couldn't remove that reminder."); }
+  }
 
   async function save() {
     const at = state.day ? fromLocalInput(`${state.day}T${time.value}`) : NaN;
     const problem = reminderProblem(at, [...selected]);
-    // Choosing alerts before a day isn't an error worth flagging yet.
-    const waiting = !state.day && !existing;
-    status.className = problem && !waiting ? 'status warn' : 'status';
-    if (problem) { status.textContent = waiting ? '' : problem; return; }
+    // Choosing a time or alerts before a day isn't an error worth flagging yet.
+    status.className = problem && state.day ? 'status warn' : 'status';
+    if (problem) { status.textContent = state.day ? problem : 'Pick a day'; return; }
     try {
       await saveReminder(noteId, newReminder(at, [...selected]));
-      remove.hidden = false;
       status.textContent = dueText(at);
       renderCounts();
     } catch {
@@ -230,17 +237,17 @@ function reminderPanel(noteId, onDone, { done = false } = {}) {
     }
   }
   time.addEventListener('change', save);
-  panel.addEventListener('keydown', event => { if (event.key === 'Escape') { event.preventDefault(); event.stopPropagation(); onDone(); } });
+  if (onEscape) panel.addEventListener('keydown', event => { if (event.key === 'Escape') { event.preventDefault(); onEscape(); } });
 
-  let cal = calendar(state, save);
-  const head = el('div', 'remind-head');
-  head.append(el('span', 'remind-label', 'Remind me'), remove);
   const timeRow = el('label', 'remind-row');
   timeRow.append(el('span', 'remind-label', 'Time'), time);
   const alertRow = el('div', 'remind-row alerts-row');
   alertRow.append(el('span', 'remind-label', 'Alert'), chips);
-  const foot = done ? bar(status, button('Done', 'primary', onDone)) : bar(status);
-  panel.append(head, cal, timeRow, alertRow, foot);
+  body.append(cal, timeRow, alertRow, bar(status));
+  toggle.setAttribute('aria-checked', on);
+  body.hidden = !on;
+  if (existing) status.textContent = dueText(existing.at);
+  panel.append(toggle, body);
   return panel;
 }
 
@@ -251,7 +258,8 @@ function focusReminder(container) {
 
 // Alerts that fired and haven't been handled, from any page. The background opens
 // the popup when one fires; handling them here turns the toolbar bell back off.
-function alertCard({ id, note, reminder }) {
+function alertCard(note) {
+  const { id, reminder } = note;
   const due = isDue(reminder, Date.now());
   const card = el('article', due ? 'note alert due' : 'note alert');
   const page = button(undefined, 'alert-page', () => act(withoutAlert(reminder), true));
@@ -287,22 +295,13 @@ function renderAlerts() {
   $('alerts').replaceChildren(heading, ...alerts.map(alertCard));
 }
 
-function openComposerReminder() {
-  const open = $('composer-reminder').hidden;
-  $('remind').setAttribute('aria-expanded', open);
-  $('composer-reminder').hidden = !open;
-  if (!open) { $('composer-reminder').replaceChildren(); $('note').focus(); return; }
-  $('composer-reminder').replaceChildren(reminderPanel(draft.id, closeComposerReminder));
-  focusReminder($('composer-reminder'));
-  $('composer-bar').scrollIntoView({ block: 'nearest' });
-}
-
-function closeComposerReminder() {
-  $('composer-reminder').hidden = true;
-  $('composer-reminder').replaceChildren();
-  $('remind').setAttribute('aria-expanded', 'false');
-  setDraftControls();
-  $('note').focus();
+// The composer's "Remind me" appears once the draft has text, since a reminder belongs to a saved note.
+function syncComposerReminder() {
+  const box = $('composer-reminder');
+  const show = Boolean(draft && $('note').value.trim());
+  box.hidden = !show;
+  if (!show) { box.replaceChildren(); delete box.dataset.note; return; }
+  if (box.dataset.note !== draft.id) { box.replaceChildren(reminderPanel(draft.id)); box.dataset.note = draft.id; }
 }
 
 function noteCard(note, view) {
@@ -320,7 +319,7 @@ function noteCard(note, view) {
     area.addEventListener('keydown', event => {
       if (event.key === 'Escape' || (event.key === 'Enter' && (event.metaKey || event.ctrlKey))) { event.preventDefault(); stopEditing(); }
     });
-    card.append(area, bar(status, button('Done', 'primary', stopEditing)));
+    card.append(area, reminderPanel(note.id, { onEscape: stopEditing }), bar(status, button('Done', 'primary', stopEditing)));
   } else if (confirming === note.id) {
     card.classList.add('confirming');
     card.append(el('p', 'note-text', note.text), bar(
@@ -328,23 +327,12 @@ function noteCard(note, view) {
       button('Cancel', 'ghost', () => { confirming = undefined; render(); }),
       button('Delete', 'danger', async () => { confirming = undefined; await persist({ ...note, text: '' }); render(); }),
     ));
-  } else if (reminding === note.id && view === currentView()) {
-    card.classList.add('reminding');
-    card.append(el('p', 'note-text', note.text), reminderPanel(note.id, () => { reminding = undefined; render(); }, { done: true }));
   } else {
     const reminder = reminderFor(note.id);
     const due = reminder && isDue(reminder, Date.now());
     if (due) card.classList.add('due');
     const actions = el('div', 'actions');
     actions.append(
-      iconButton('bell', reminder ? 'Edit reminder' : 'Remind me', 'bell', () => {
-        reminding = note.id;
-        editing = confirming = undefined;
-        render();
-        const panel = document.querySelector('.note.reminding');
-        panel?.scrollIntoView({ block: 'nearest' });
-        focusReminder(panel);
-      }),
       iconButton('edit', 'Edit note', 'edit', () => openEditor(note)),
       iconButton('trash', 'Delete note', 'delete', () => { confirming = note.id; render(); }),
     );
@@ -362,7 +350,7 @@ function noteCard(note, view) {
 
 function openEditor(note) {
   editing = { id: note.id, text: note.text };
-  confirming = reminding = undefined;
+  confirming = undefined;
   render();
   document.querySelector('.note.editing textarea')?.focus();
 }
@@ -411,8 +399,7 @@ function render() {
 function setDraftControls() {
   $('composer-bar').hidden = !$('note').value;
   $('save').disabled = !$('note').value.trim();
-  $('remind').disabled = !draft || !$('note').value.trim();
-  $('remind').classList.toggle('on', Boolean(draft && reminderFor(draft.id)));
+  syncComposerReminder();
 }
 
 async function finishDraft() {
@@ -420,7 +407,7 @@ async function finishDraft() {
   draft = undefined;
   $('note').value = '';
   $('status').textContent = '';
-  closeComposerReminder();
+  setDraftControls();
   render();
   $('note').focus();
 }
@@ -448,15 +435,13 @@ $('note').addEventListener('keydown', event => {
   if (event.key === 'Enter' && (event.metaKey || event.ctrlKey)) { event.preventDefault(); finishDraft(); }
 });
 $('save').addEventListener('click', finishDraft);
-$('remind').innerHTML = svg('bell');
-$('remind').addEventListener('click', openComposerReminder);
 $('discard').addEventListener('click', async () => {
   const note = draft;
   draft = undefined;
   $('note').value = '';
-  closeComposerReminder();
-  // The background removes a deleted note's reminder from storage.
-  if (note) { delete items[reminderKey(note.id)]; await persist({ ...note, text: '' }, $('status')); }
+  setDraftControls();
+  // Deleting the draft deletes its reminder too: it's part of the note.
+  if (note) await persist({ ...note, text: '' }, $('status'));
   $('note').focus();
 });
 $('search').addEventListener('input', render);

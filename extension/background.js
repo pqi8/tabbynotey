@@ -1,5 +1,5 @@
 import { PREFIX, badgeText, noteKey, notesForUrl } from './notes.js';
-import { ALARM_PREFIX, REMINDER_PREFIX, activeAlerts, alertPending, anyDue, nextWake, reminderKey, remindersByNote, validReminder } from './reminders.js';
+import { ALARM_PREFIX, activeAlerts, alertPending, anyDue, nextWake, notesWithReminders, validReminder } from './reminders.js';
 
 const storage = chrome.storage.local;
 const NOTE_COLOR = '#2f6b57';
@@ -68,7 +68,7 @@ async function schedule(noteId, reminder) {
 // in front, so an alert that fires while you're in another app opens the popup when
 // you come back. Each alert opens the popup once; the bell stays until it's handled.
 const POPPED = 'poppedAlerts';
-const alertId = ({ id, reminder }) => id + '@' + reminder.alertedAt;
+const alertId = note => note.id + '@' + note.reminder.alertedAt;
 let popping = Promise.resolve();
 
 async function openPopupForAlerts() {
@@ -89,32 +89,29 @@ function popUp() {
 }
 
 async function check(noteId) {
-  const key = reminderKey(noteId);
-  const items = await storage.get([noteKey(noteId), key]);
-  const note = items[noteKey(noteId)];
-  const reminder = items[key];
+  const key = noteKey(noteId);
+  const note = (await storage.get(key))[key];
+  const reminder = note?.reminder;
   if (!validReminder(reminder)) return chrome.alarms.clear(ALARM_PREFIX + noteId);
-  if (!note) return storage.remove(key);
   const now = Date.now();
   const alert = alertPending(reminder, now);
-  // Leave it alone if the popup changed the reminder since we read it.
+  // Leave it alone if the popup changed the note since we read it.
   const latest = (await storage.get(key))[key];
-  if (JSON.stringify(latest) !== JSON.stringify(reminder)) return;
+  if (JSON.stringify(latest) !== JSON.stringify(note)) return;
   // Recording progress triggers storage.onChanged, which reschedules and repaints badges.
-  await storage.set({ [key]: { ...reminder, handledUntil: now, ...(alert && { alertedAt: now }) } });
+  // The note's updatedAt is left alone: bookkeeping isn't an edit.
+  await storage.set({ [key]: { ...note, reminder: { ...reminder, handledUntil: now, ...(alert && { alertedAt: now }) } } });
   if (alert) await popUp();
 }
 
 // Chrome can drop alarms on restart or update, so rebuild them from storage.
 async function rescheduleAll() {
-  const items = await storage.get(null);
-  const live = remindersByNote(items);
-  const orphans = Object.keys(items).filter(key => key.startsWith(REMINDER_PREFIX) && !live.has(key.slice(REMINDER_PREFIX.length)));
-  if (orphans.length) await storage.remove(orphans);
+  const notes = notesWithReminders(await storage.get(null));
+  const live = new Set(notes.map(note => note.id));
   const alarms = await chrome.alarms.getAll();
   await Promise.all(alarms.filter(alarm => alarm.name.startsWith(ALARM_PREFIX) && !live.has(alarm.name.slice(ALARM_PREFIX.length)))
     .map(alarm => chrome.alarms.clear(alarm.name)));
-  await Promise.all([...live].map(([noteId, reminder]) => schedule(noteId, reminder)));
+  await Promise.all(notes.map(note => schedule(note.id, note.reminder)));
 }
 
 // Startup
@@ -150,16 +147,14 @@ chrome.storage.onChanged.addListener((changes, area) => {
   if (area !== 'local') return;
   let repaint = false;
   for (const [key, { oldValue, newValue }] of Object.entries(changes)) {
-    if (key.startsWith(REMINDER_PREFIX)) {
-      const noteId = key.slice(REMINDER_PREFIX.length);
-      quietly(schedule(noteId, newValue));
+    if (!key.startsWith(PREFIX)) continue;
+    // Deleting a note takes its reminder, and so its alarm, with it.
+    if (JSON.stringify(oldValue?.reminder) !== JSON.stringify(newValue?.reminder)) {
+      quietly(schedule(key.slice(PREFIX.length), newValue?.reminder));
       repaint = true;
-    } else if (key.startsWith(PREFIX)) {
-      // A deleted note takes its reminder with it.
-      if (oldValue && !newValue) quietly(storage.remove(reminderKey(key.slice(PREFIX.length))));
-      // Counts only change when a note is created or deleted, not on every keystroke.
-      if (!oldValue || !newValue || oldValue.url !== newValue.url) repaint = true;
     }
+    // Counts only change when a note is created or deleted, not on every keystroke.
+    if (!oldValue || !newValue || oldValue.url !== newValue.url) repaint = true;
   }
   if (repaint) quietly(updateAll());
 });

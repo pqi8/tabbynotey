@@ -36,18 +36,38 @@ export function notesForUrl(items, url) {
 
 export function badgeText(count) { return count > 99 ? '99+' : count ? String(count) : ''; }
 
-// Serialize writes so an earlier keystroke cannot overwrite a later edit.
-// Blank text deletes the note. Resolves with the stored record.
+// A note's reminder lives on the note as `reminder: { at, alerts, handledUntil, alertedAt? }`.
+// The background also writes to it as alerts fire, so every write re-reads the stored
+// note and changes only its own part: saving text keeps the stored reminder, and
+// setting a reminder keeps the stored text.
+//
+// Writes are serialized so an earlier keystroke cannot overwrite a later edit.
 export function createWriter(storage) {
   let pending = Promise.resolve();
-  return note => {
+  const queue = task => (pending = pending.catch(() => {}).then(task));
+  const stored = async key => (await storage.get(key))[key];
+
+  // Blank text deletes the note, reminder and all. Resolves with the stored record.
+  const save = note => queue(async () => {
     const key = noteKey(note.id);
-    pending = pending.catch(() => {}).then(async () => {
-      if (!note.text.trim()) { await storage.remove(key); return null; }
-      const record = { ...note, updatedAt: Date.now() };
-      await storage.set({ [key]: record });
-      return record;
-    });
-    return pending;
-  };
+    if (!note.text.trim()) { await storage.remove(key); return null; }
+    const { reminder: _, ...fields } = note;
+    const { reminder } = await stored(key) ?? {};
+    const record = { ...fields, ...(reminder && { reminder }), updatedAt: Date.now() };
+    await storage.set({ [key]: record });
+    return record;
+  });
+
+  // Sets or (with no reminder) clears it. Resolves with the stored note, or null if it's gone.
+  const setReminder = (id, reminder) => queue(async () => {
+    const key = noteKey(id);
+    const note = await stored(key);
+    if (!note) return null;
+    const { reminder: _, ...record } = note;
+    if (reminder) record.reminder = reminder;
+    await storage.set({ [key]: record });
+    return record;
+  });
+
+  return { save, setReminder };
 }

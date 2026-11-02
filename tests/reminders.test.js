@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
   newReminder, validReminder, reminderProblem, nextWake, alertPending, isDue,
-  remindersByNote, anyDue, dueText, toLocalInput, fromLocalInput, reminderKey,
+  notesWithReminders, anyDue, dueText, toLocalInput, fromLocalInput,
   activeAlerts, withoutAlert, dismissed,
 } from '../extension/reminders.js';
 
@@ -59,15 +59,14 @@ test('missed alerts collapse into one, and only once', () => {
   assert.equal(isDue(early, at), true);
 });
 
-test('only reminders with a live note count, and any due one flags the badge', () => {
+test('only well-formed reminders on live notes count, and any due one flags the badge', () => {
   const items = {
-    'note:a': { url: 'https://a.test', text: 'A' },
-    [reminderKey('a')]: newReminder(at, [0], NOW),
-    [reminderKey('gone')]: newReminder(NOW + MIN, [0], NOW),
-    [reminderKey('bad')]: { at: 'soon' },
+    'note:a': { url: 'https://a.test', text: 'A', reminder: newReminder(at, [0], NOW) },
+    'note:plain': { url: 'https://a.test', text: 'No reminder' },
+    'note:bad': { url: 'https://b.test', text: 'B', reminder: { at: 'soon' } },
+    'note:blank': { url: 'https://b.test', text: ' ', reminder: newReminder(NOW + MIN, [0], NOW) },
   };
-  items['note:bad'] = { url: 'https://b.test', text: 'B' };
-  assert.deepEqual([...remindersByNote(items).keys()], ['a']);
+  assert.deepEqual(notesWithReminders(items).map(note => note.id), ['a']);
   assert.equal(anyDue(items, at - 1), false);
   assert.equal(anyDue(items, at), true);
 });
@@ -85,17 +84,14 @@ test('datetime-local values round-trip in local time', () => {
   assert.ok(Number.isNaN(fromLocalInput('')));
 });
 
-test('the alert window lists fired alerts with live notes, soonest first', () => {
+test('the alert list shows fired alerts on live notes, soonest first', () => {
   const items = {
-    'note:a': { url: 'https://a.test', text: 'A' },
-    'note:b': { url: 'https://b.test', text: 'B' },
-    'note:c': { url: 'https://c.test', text: 'C' },
-    [reminderKey('a')]: { ...newReminder(at + MIN, [0], NOW), alertedAt: NOW },
-    [reminderKey('b')]: { ...newReminder(at, [60], NOW), alertedAt: NOW },
-    [reminderKey('c')]: newReminder(at, [0], NOW),
-    [reminderKey('gone')]: { ...newReminder(at, [0], NOW), alertedAt: NOW },
+    'note:a': { url: 'https://a.test', text: 'A', reminder: { ...newReminder(at + MIN, [0], NOW), alertedAt: NOW } },
+    'note:b': { url: 'https://b.test', text: 'B', reminder: { ...newReminder(at, [60], NOW), alertedAt: NOW } },
+    'note:c': { url: 'https://c.test', text: 'C', reminder: newReminder(at, [0], NOW) },
+    'note:gone': { url: 'https://d.test', text: '', reminder: { ...newReminder(at, [0], NOW), alertedAt: NOW } },
   };
-  assert.deepEqual(activeAlerts(items).map(alert => [alert.id, alert.note.text]), [['b', 'B'], ['a', 'A']]);
+  assert.deepEqual(activeAlerts(items).map(note => [note.id, note.text]), [['b', 'B'], ['a', 'A']]);
 });
 
 test('dismissing an early alert keeps the reminder; once due it is finished', () => {

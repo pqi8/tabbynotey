@@ -18,7 +18,7 @@ Open the extension on a web page and type a note. Your text saves as you type. U
 
 This page shows notes for the current URL. All notes groups your saved notes by page. Search by note text, page title, or URL, and click a page heading to return to it. You can edit or delete notes and export them as a JSON backup.
 
-Add a reminder to any note: click the bell, pick a date and time, and choose when to be alerted (24 hours, 1 hour, 30, 15 or 5 minutes before, or at the time). When an alert is due, the toolbar icon becomes a ringing bell and TabbyNotey opens to show the reminder, with Open page and Dismiss. If you're in another app at the time, it opens when you return to Chrome.
+Any note can have a reminder: turn on Remind me, pick a day and time, and choose when to be alerted (24 hours, 1 hour, 30, 15 or 5 minutes before, or at the time). When an alert is due, the toolbar icon becomes a ringing bell and TabbyNotey opens to show the reminder, with Open page and Dismiss. If you're in another app at the time, it opens when you return to Chrome.
 
 Notes stay in chrome.storage.local in this Chrome profile on this device. There is no account, sync, analytics, or transmission to the developer or another service. The extension reads open tabs' URLs to update badges and find already-open pages; it stores the full URL and page title only when you write a note. It displays page icons through Chrome's favicon service. It never reads or changes page content.
 
@@ -102,7 +102,7 @@ Paste the final public HTTPS URL for privacy.html after hosting it. No policy ha
 
 Must fit the dashboard's 500-character limit.
 
-No login needed. Open any HTTP(S) page, pin TabbyNotey, click its icon, type a note and click Add note; the badge shows the count. All notes searches, edits and deletes notes. Reminders: on a saved note click the bell, pick a time 2 minutes ahead, keep "At the time" ticked, click Done. When due, the toolbar icon becomes a swinging amber bell and the popup opens with the reminder (or when Chrome is next in front). Dismiss stops the bell.
+No login needed. Open any HTTP(S) page, pin TabbyNotey, click its icon, type a note and click Add note; the badge shows the count. All notes searches, edits and deletes notes. Reminders: edit a saved note, turn on Remind me, pick today and a time 2 minutes ahead, keep "At time" selected. When due, the toolbar icon becomes a swinging amber bell and the popup opens with the reminder (or when Chrome is next in front). Dismiss stops the bell.
 
 ## Official references
 

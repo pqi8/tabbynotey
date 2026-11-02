@@ -1,8 +1,6 @@
-import { PREFIX } from './notes.js';
+import { savedNotes } from './notes.js';
 
-// A reminder lives under `reminder:<noteId>`, apart from the note, so the popup
-// rewriting a note's text never clobbers the background's alert bookkeeping.
-export const REMINDER_PREFIX = 'reminder:';
+// A reminder is part of its note (`note.reminder`); see createWriter in notes.js.
 export const ALARM_PREFIX = 'remind:';
 
 // Minutes before the reminder time.
@@ -18,8 +16,6 @@ export const DEFAULT_ALERTS = [0];
 
 const MINUTE = 60000;
 const ALLOWED = new Set(ALERTS.map(([minutes]) => minutes));
-
-export function reminderKey(noteId) { return REMINDER_PREFIX + noteId; }
 
 export function validReminder(reminder) {
   return Boolean(reminder) && Number.isFinite(reminder.at) &&
@@ -58,23 +54,13 @@ export function alertPending(reminder, now) {
 
 export const isDue = (reminder, now) => now >= reminder.at;
 
-// Reminders keyed by note id, ignoring malformed records and reminders whose note is gone.
-export function remindersByNote(items) {
-  const result = new Map();
-  for (const [key, value] of Object.entries(items)) {
-    const id = key.slice(REMINDER_PREFIX.length);
-    if (key.startsWith(REMINDER_PREFIX) && validReminder(value) && items[PREFIX + id]) result.set(id, value);
-  }
-  return result;
-}
+// Notes that have a well-formed reminder.
+export const notesWithReminders = items => savedNotes(items).filter(note => validReminder(note.reminder));
 
-// Alerts that fired and are still showing in the alert window, soonest reminder first.
-export function activeAlerts(items) {
-  return [...remindersByNote(items)]
-    .filter(([, reminder]) => reminder.alertedAt)
-    .map(([id, reminder]) => ({ id, reminder, note: items[PREFIX + id] }))
-    .sort((a, b) => a.reminder.at - b.reminder.at);
-}
+// Alerts that fired and are still showing at the top of the popup, soonest reminder first.
+export const activeAlerts = items => notesWithReminders(items)
+  .filter(note => note.reminder.alertedAt)
+  .sort((a, b) => a.reminder.at - b.reminder.at);
 
 // Takes the reminder out of the alert window but keeps it, still due if it is.
 export function withoutAlert(reminder) {
@@ -88,7 +74,7 @@ export function dismissed(reminder, now) {
 }
 
 export function anyDue(items, now) {
-  return [...remindersByNote(items).values()].some(reminder => isDue(reminder, now));
+  return notesWithReminders(items).some(note => isDue(note.reminder, now));
 }
 
 const relative = new Intl.RelativeTimeFormat(undefined, { numeric: 'auto' });

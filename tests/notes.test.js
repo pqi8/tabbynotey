@@ -61,31 +61,67 @@ test('badge shows the note count, blank when there are none', () => {
   assert.equal(badgeText(120), '99+');
 });
 
-test('rapid edits persist in order, preserve other notes, and clearing removes only that note', async () => {
-  const items = {};
-  const storage = {
-    async set(value) { await new Promise(resolve => setTimeout(resolve, 5)); Object.assign(items, value); },
+// An in-memory chrome.storage.local, with a delay on writes to expose ordering bugs.
+function memoryStorage(items = {}) {
+  return {
+    items,
+    async get(key) { return key in items ? { [key]: structuredClone(items[key]) } : {}; },
+    async set(value) { await new Promise(resolve => setTimeout(resolve, 5)); Object.assign(items, structuredClone(value)); },
     async remove(key) { delete items[key]; },
   };
-  const write = createWriter(storage);
+}
+
+test('rapid edits persist in order, preserve other notes, and clearing removes only that note', async () => {
+  const storage = memoryStorage();
+  const { save } = createWriter(storage);
   const keep = { ...newNote('https://a.test', 'A'), text: 'Keep me' };
   const note = newNote('https://a.test', 'A');
-  await write(keep);
-  const results = await Promise.all(['a', 'ab', 'abc'].map(text => write({ ...note, text })));
-  assert.equal(items[noteKey(note.id)].text, 'abc');
+  await save(keep);
+  const results = await Promise.all(['a', 'ab', 'abc'].map(text => save({ ...note, text })));
+  assert.equal(storage.items[noteKey(note.id)].text, 'abc');
   assert.equal(results[2].text, 'abc');
-  assert.equal(await write({ ...note, text: ' ' }), null);
-  assert.equal(items[noteKey(note.id)], undefined);
-  assert.equal(items[noteKey(keep.id)].text, 'Keep me');
+  assert.equal(await save({ ...note, text: ' ' }), null);
+  assert.equal(storage.items[noteKey(note.id)], undefined);
+  assert.equal(storage.items[noteKey(keep.id)].text, 'Keep me');
+});
+
+test('the reminder is part of the note, and text and reminder writes never undo each other', async () => {
+  const storage = memoryStorage();
+  const { save, setReminder } = createWriter(storage);
+  const note = { ...newNote('https://a.test', 'A'), text: 'Flip the flag' };
+  await save(note);
+  const reminder = { at: 10, alerts: [0], handledUntil: 1 };
+  const withReminder = await setReminder(note.id, reminder);
+  assert.deepEqual(withReminder.reminder, reminder);
+  assert.equal(withReminder.updatedAt, storage.items[noteKey(note.id)].updatedAt);
+
+  // The background records an alert while the popup still holds the old note.
+  storage.items[noteKey(note.id)].reminder.alertedAt = 5;
+  await save({ ...note, reminder: undefined, text: 'Flip the flag today' });
+  assert.equal(storage.items[noteKey(note.id)].text, 'Flip the flag today');
+  assert.equal(storage.items[noteKey(note.id)].reminder.alertedAt, 5);
+
+  // Turning the reminder off removes it, and keeps the text.
+  await setReminder(note.id);
+  assert.equal('reminder' in storage.items[noteKey(note.id)], false);
+  assert.equal(storage.items[noteKey(note.id)].text, 'Flip the flag today');
+
+  // A deleted note takes its reminder with it, and can't be given a new one.
+  await setReminder(note.id, reminder);
+  await save({ ...note, text: '' });
+  assert.equal(await setReminder(note.id, reminder), null);
+  assert.equal(storage.items[noteKey(note.id)], undefined);
 });
 
 test('storage failures are surfaced and a later edit can retry', async () => {
   let fail = true;
-  let result;
-  const write = createWriter({ async set(value) { if (fail) throw Error('quota'); result = value; } });
+  const storage = memoryStorage();
+  const set = storage.set;
+  storage.set = async value => { if (fail) throw Error('quota'); return set(value); };
+  const { save } = createWriter(storage);
   const note = newNote('https://a.test', 'A');
-  await assert.rejects(write({ ...note, text: 'First' }), /quota/);
+  await assert.rejects(save({ ...note, text: 'First' }), /quota/);
   fail = false;
-  await write({ ...note, text: 'Retry' });
-  assert.equal(result[noteKey(note.id)].text, 'Retry');
+  await save({ ...note, text: 'Retry' });
+  assert.equal(storage.items[noteKey(note.id)].text, 'Retry');
 });
